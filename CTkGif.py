@@ -5,13 +5,15 @@ import customtkinter as ctk
 class CTkGif(ctk.CTkLabel):
 
     def __init__(self, master: any, file_path: str, loop: bool = True, acceleration: float = 1, repeat: int = 1,
-                 **kwargs) -> None:
+                 size: tuple = None, stop_command: callable = None, **kwargs) -> None:
         """ CustomTkinter widget to display and manage a GIF file (as a succession of frames)
         :param master: the parent widget
         :param file_path: the path to the .gif file
         :param loop: if the gif should start again when its end is reached
         :param acceleration: factor of speed to play the gif animation
         :param repeat: the number of times the gif should be played if not looped
+        :param size: the size in px of the frames in the gif
+        :param stop_command: to call at the end of the gif
         :param kwargs: params for the parent CTkLabel if needed """
         super().__init__(master, **kwargs)
 
@@ -20,10 +22,15 @@ class CTkGif(ctk.CTkLabel):
 
         self.repeat = repeat
         self.loop = loop
+        self.stop_command = stop_command
         self.gif = Image.open(file_path)
         self.n_frame = self.gif.n_frames
         self.frame_duration = self.gif.info['duration'] * 1 / acceleration
-        self.configure(text='')
+        if size is not None:
+            self.size = size
+        else:
+            self.size = self.gif.size
+        self.configure(text='', image=ctk.CTkImage(self.gif, size=self.size))
 
         self.repeat_count = 0
         self.frame_index = 0
@@ -37,12 +44,13 @@ class CTkGif(ctk.CTkLabel):
             if not self.force_stop:
 
                 self.gif.seek(self.frame_index)  # next frame
-                self.configure(image=ctk.CTkImage(self.gif, size=(300, 100)))  # update displayed image
+                self.configure(image=ctk.CTkImage(self.gif, size=self.size))  # update displayed image
                 self.frame_index += 1  # Indexation
                 self.after(int(self.frame_duration), self.update)  # Programmation prochaine frame
 
             else:
                 self.force_stop = False
+                self.call_stop_command()
 
         else:  # Last gif frame reached
 
@@ -52,6 +60,7 @@ class CTkGif(ctk.CTkLabel):
                 self.after(self.frame_duration, self.update)
             else:
                 self.is_playing = False
+                self.call_stop_command()
 
     def start(self):
         """ Launch the frame cycle"""
@@ -73,4 +82,6 @@ class CTkGif(ctk.CTkLabel):
         else:
             self.start()
 
-
+    def call_stop_command(self):
+        if self.stop_command is not None:
+            self.stop_command()
