@@ -57,7 +57,7 @@ class CTkGif(ctk.CTkLabel):
             self.frame_index = 0  # Next frame to be displayed is the first one
             self.repeat_count += 1
             if self.is_playing and (self.repeat_count < self.repeat or self.loop):
-                self.after(self.frame_duration, self.update)
+                self.after(int(self.frame_duration), self.update)
             else:
                 self.is_playing = False
                 self.call_stop_command()
